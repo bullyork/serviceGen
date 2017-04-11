@@ -1,0 +1,22 @@
+syntax = "proto3";
+package spike;
+
+message SellerExporterExportReq {
+	int32 type = 1; // 参考apidoc的枚举类型
+	int64 shopId = 2;
+	string query = 3;
+}
+
+enum SellerExporterCode {
+	SellerExporterCodeOk = 0;
+	SellerExporterCodeError = 1;
+}
+
+message SellerExporterExportResp {
+	SellerExporterCode code = 1;
+	string fileID = 2;
+}
+
+service SellerExporter {
+	rpc Export(SellerExporterExportReq) returns (SellerExporterExportResp);
+}

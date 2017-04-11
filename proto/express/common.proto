@@ -1,0 +1,118 @@
+syntax = "proto3";
+package express;
+
+//! 通用响应
+message Result {
+	int32 	code = 1;
+	string 	message = 2;
+}
+
+//! 区域
+message Region {
+	int64 	id = 1;
+	int64 	parent_id = 2;
+	string	region_name = 3;
+	string 	region_code = 4;
+	int64 	max_weight = 5;
+	bool   	is_leaf = 6;
+	bool	is_active = 7;
+	int32	time_zone = 8;
+}
+
+//! 邮编
+message PostCode {
+	int64 	id = 1;
+	string  code = 2;
+}
+
+//! 发件类型
+message DeliveryType {
+	int64  	id = 1;
+	string 	delivery_type_code = 2;
+	string  delivery_type_name = 3;
+}
+
+//! 站点类型
+message StationType {
+	int64  	id = 1;		
+	string 	station_type_code = 2;
+	string 	station_type_name = 3;
+	int64	delivery_type_id = 4;
+	bool 	is_active = 5;
+}
+
+//! 发件站基础信息
+message DeliveryStation {
+	int64 	id = 1;
+	int64 	delivery_type_id = 2;
+	string 	delivery_type_code = 3;
+	int64  	station_type_id = 4;
+	string  station_type_code = 5;
+	string 	station_name = 6;
+	string 	station_code = 7;
+	string 	station_address = 8;
+	string 	post_code = 9;
+	double 	longitude = 10;
+	double 	latitude = 11;
+	int64 	max_weight = 12;
+	int32 	sort_by = 13;
+	int64 	region_id = 14;
+	bool	is_active = 15;
+}
+
+//! 发件站基础详情
+message DeliveryStationDetail {
+	DeliveryStation delivery_station = 1;
+	string 	manager_name = 2;
+	string 	telephone = 3;
+	string 	how_to_arrive = 4;
+	string 	notes = 5;
+	string 	time_slot = 6;
+	string 	image = 7;
+	string 	icon_image = 8;
+	string 	label = 9;
+	string 	marker_color = 10;
+	int64 	start_date = 11;
+	int64 	end_date = 12;	
+}
+
+message EditDeliveryStationDetail {
+	int64	delivery_station_id = 1;
+	string 	manager_name = 2;
+	string 	telephone = 3;
+	string 	how_to_arrive = 4;
+	string 	notes = 5;
+	string 	time_slot = 6;
+	string 	image = 7;
+	string 	icon_image = 8;
+	string 	label = 9;
+	string 	marker_color = 10;
+	int64 	start_date = 11;
+	int64 	end_date = 12;	
+}
+
+//! 取件时段
+message PickupPeriod {
+	int64 	id = 1;
+	int64 	delivery_station_id = 2;
+	string 	period_name = 3;
+	int32 	period_start_time = 4;
+	int32 	period_end_time = 5;
+	int32 	arrange_ahead_of_time = 6;
+	int64 	max_packages = 7;
+	string 	day_of_week = 8;
+	bool	is_active = 9;
+	//! date for the pickup arrangement according to the request, no saved in database
+	string	arrange_date = 10;
+	int32	time_zone = 11;
+}
+
+//! 假期设置
+message Holiday {
+	int64	id = 1;
+	int64 	delivery_station_id = 2;
+	int64 	start_time = 3;
+	int64 	end_time = 4;
+	bool	is_active = 5;	
+	int32	time_zone = 6;
+}

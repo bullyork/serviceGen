@@ -1,0 +1,80 @@
+syntax = "proto3";
+package spike;
+import "spike/product_entity.proto";
+
+enum ProductSource {
+	ProductSourceInvalid = 0;
+	ProductSourceEzbuy = 10;
+	ProductSourceTaobao = 20;
+	ProductSourceMomoso = 31;
+	ProductSourceKorea = 32;
+	ProductSourceBestbuy = 33;
+	ProductSourceAldoshoes = 34;
+	ProductSourceCarters = 35;
+	ProductSourceTimberland = 36;
+	ProductSourceColourpop = 37;
+	ProductSourceCalphlauren = 38;
+	ProductSourceAmazon = 39;
+	ProductSourceWalmart = 40;
+	ProductSourceSixpm = 41;
+	ProductSourceNike = 42;
+}
+
+message NewGpidReq {
+	ProductSource source = 1;
+}
+
+message NewGpidResp {
+	int64 gpid = 1;
+}
+
+message ProductGet {
+	// 任填一个, 都提供时以第一个为准
+	int64 gpid = 1;
+	string refId = 2;
+
+	// 必选
+	string catalog = 3;
+	string lang = 4; // en,cn,th,id,ms
+}
+
+message ProductGetResp {
+	ProductEntity entity = 1;
+}
+
+message ProductSyncReq {
+	int64 gpid = 1;
+	// 当使用refId时, 需要指定source
+	string refId = 2;
+	ProductSource source = 3;
+
+	bool force = 4;
+}
+
+message ProductSyncResp {
+	int64 gpid = 1;
+}
+
+message ProductSearch {
+	string query = 1;
+	int32 from = 2;
+	int32 size = 3;
+	repeated string sort = 4;
+	bool nocache = 6;
+	string cacheTime = 5;
+	
+	string catalog = 7;
+	string lang = 8;
+}
+
+message ProductSearchResp {
+	int64 total = 1;
+	repeated ProductEntity entity = 2;
+}
+
+service Product {
+	rpc NewGpid(NewGpidReq) returns (NewGpidResp);
+	rpc Get(ProductGet) returns (ProductGetResp);
+	rpc Sync(ProductSyncReq) returns (ProductSyncResp);
+	rpc Search(ProductSearch) returns (ProductSearchResp);
+}

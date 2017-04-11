@@ -1,0 +1,505 @@
+syntax = "proto3";
+package express;
+
+import "express/common.proto";
+
+
+///////// 站点类型 参数 ////////////////
+
+message GetDeliveryTypeListReq {
+	//! 区域编号
+	int64 	region_id = 1;
+	int32 	offset = 2;
+	int32 	limit = 3;
+}
+
+message GetDeliveryTypeListResp {
+	Result 	result = 1;
+	int32	total = 2;
+	repeated DeliveryType items = 3;
+}
+
+message GetStationTypeListReq {
+	//! 区域编号
+	int64 	region_id = 1;
+	int32 	offset = 2;
+	int32 	limit = 3;
+}
+
+message GetStationTypeListResp {
+	Result 	result = 1;
+	int32	total = 2;
+	repeated StationType items = 3;
+}
+
+///////// 站点 参数 ////////////////
+
+message GetStationReq {
+	int64 	delivery_station_id = 1;
+	int64 	delivery_type_id = 2;
+	string 	delivery_type_code = 3;
+}
+
+message GetStationResp {
+	Result 	result = 1;
+	DeliveryStation data = 2;
+}
+
+message GetStationByNameReq {
+	int64 	region_id = 1;
+	string 	delivery_station_name = 2;
+}
+
+message GetStationByNameResp {
+	Result 	result = 1;
+	DeliveryStation data = 2;
+}
+
+message GetStationDetailResp {
+	Result 	result = 1;
+	DeliveryStationDetail data = 2;
+}
+
+message GetStationListByDeliveryTypeReq {
+	//! 按区域获取
+	int64 	region_id = 1;
+	//! 按类型获取
+	int64 	delivery_type_id = 2;
+	string 	delivery_type_code = 3;
+	int32 	offset = 4;
+	int32 	limit = 5;
+}
+
+message GetStationListByDeliveryTypeResp {
+	Result 	result = 1;
+	int32	total = 2;
+	repeated DeliveryStation items = 3;
+}
+
+message GetStationListByStationTypeReq {
+	//! 按区域获取
+	int64 	region_id = 1;
+	//! 按类型获取
+	int64 	station_type_id = 2;
+	string 	station_type_code = 3;
+	int32 	offset = 4;
+	int32 	limit = 5;
+}
+
+message GetStationListByStationTypeResp {
+	Result 	result = 1;
+	int32	total = 2;
+	repeated DeliveryStation items = 3;
+}
+
+message GetStationListByGeoReq {
+	//! 按地理区域获取
+	double 	longitude = 1;
+	double	latitude = 2;
+	int64	scope = 3;
+	//! 按类型获取
+	int64 	delivery_type_id = 4;
+	string 	delivery_type_code = 5;
+	int32 	offset = 6;
+	int32 	limit = 7;
+}
+
+message GetStationListByGeoResp {
+	Result 	result = 1;
+	int32	total = 2;
+	repeated DeliveryStation items = 3;
+}
+
+message IsStationOnHolidayReq {
+	int64 	delivery_station_id = 1;
+	int64 	holiday_start_date = 2;
+	int64 	holiday_end_date = 3;
+}
+
+message IsStationOnHolidayResp {
+	Result result = 1;
+	//! 是否在休假
+	bool on_holiday = 2;
+}
+
+message GetStationHolidaysReq {
+	int64 	delivery_station_id = 1;
+	int64 	start_date = 2;
+	int64 	deadline_date = 3;
+	int32 	offset = 4;
+	int32 	limit = 5;
+}	
+
+message GetStationHolidaysResp {
+	Result 	result = 1;
+	int32	total = 2;
+	repeated Holiday items = 3;
+}
+
+///////// 取件时段 参数 ////////////////
+
+message GetPickupPeriodReq {
+	int64 	pickup_period_id = 1;
+	//! 为保证新老数据兼容 需提供派送类型
+	int64 	delivery_type_id = 2;
+	string 	delivery_type_code = 3;
+}
+
+message GetPickupPeriodResp {
+	Result result = 1;
+	PickupPeriod data = 2;
+}
+
+message GetPickupPeriodByNameReq {
+	int64	delivery_station_id = 1;
+	string  pickup_period_name = 2;
+	string	day_of_week = 3;	
+}
+
+message GetPickupPeriodByNameResp {
+	Result 	result = 1;
+	PickupPeriod data = 2;
+	//! 辅助输出
+	int64	delivery_type_id = 3;
+	int64	station_type_id = 4;
+}
+
+message GetPickupPeriodCalendarReq {
+	//! 按 收件站编号 获取 
+	int64 	delivery_station_id = 1;
+	//! 开始时间默认0时，取当前时区时间戳的日期部分
+	int64	start_date = 2;
+	int32	days = 3;
+	int32 	offset = 4;
+	int32 	limit = 5;
+}
+
+message GetPickupPeriodCalendarResp {
+	Result 	result = 1;
+	int32	total = 2;
+	repeated int64 items = 3;
+}
+
+message GetStationPickupPeriodListReq {
+	//! 按 收件站编号 获取 
+	int64 	delivery_station_id = 1;
+	//! 开始时间默认0时，取当前时区时间戳的日期部分
+	int64	start_date = 2;
+	int64	end_date = 3;
+	int32 	offset = 4;
+	int32 	limit = 5;
+	bool	ignore_cut_off_time = 6;
+}
+
+message GetStationPickupPeriodListByDaysReq {
+	//! 按 收件站编号 获取 
+	int64 	delivery_station_id = 1;
+	//! 开始时间默认0时，取当前时区时间戳的日期部分
+	int64	arrange_date = 2;
+	//! 按 未来几天 获取  arrange_days
+	int32 	arrange_days = 3;
+	int32 	offset = 4;
+	int32 	limit = 5;
+	bool	ignore_cut_off_time = 6;
+}
+
+message GetStationPickupPeriodListByDateReq {
+	//! 按 收件站编号 获取 
+	int64 	delivery_station_id = 1;
+	//! 开始时间默认0时，取当前时区时间戳日期部分
+	int64 	arrange_date = 2;
+	int32 	offset = 3;
+	int32 	limit = 4;
+	bool	ignore_cut_off_time = 6;
+}
+
+message GetStationPickupPeriodListResp {
+	Result result = 1;
+	int32	total = 2;
+	repeated PickupPeriod items = 3;
+}
+
+message GetStationPickupPeriodListByDaysResp {
+	Result result = 1;
+	int32	total = 2;
+	repeated PickupPeriod items = 3;
+}
+
+message GetStationPickupPeriodListByDateResp {
+	Result result = 1;
+	int32	total = 2;
+	repeated PickupPeriod items = 3;
+}
+
+
+message SetPickupArrangementReq {
+	int64 	pickup_period_id = 1;
+	int64 	package_id = 2;
+	int64 	pickup_date = 3;
+}
+
+message SetPickupArrangementResp {
+	Result 	result = 1;
+}
+
+///////// ERP 管理接口 参数////////////////
+
+message ListStationReq {
+	//! 按区域获取
+	int64 	region_id = 1;
+	//! 按类型获取
+	int64 	delivery_type_id = 2;
+	string 	delivery_type_code = 3;
+	string	delivery_station_name = 4;
+	int32 	offset = 5;
+	int32 	limit = 6;
+}
+
+message ListStationResp {
+	Result 	result = 1;
+	int32	total = 2;
+	repeated DeliveryStation items = 3;
+	int32 	time_zone = 4;
+}
+
+message AddStationReq {
+	DeliveryStation delivery_station = 1;
+}
+
+message AddStationResp {
+	Result result = 1;
+	DeliveryStation data = 2;	
+}
+
+message ModifyStationReq {
+	DeliveryStation delivery_station = 1;
+}
+
+message ModifyStationResp {
+	Result result = 1;
+}
+
+message AddStationDetailReq {
+	EditDeliveryStationDetail delivery_station_detail = 1;
+}
+
+message AddStationDetailResp {
+	Result 	result = 1;
+	EditDeliveryStationDetail data = 2;	
+}
+
+message ModifyStationDetailReq {
+	EditDeliveryStationDetail delivery_station_detail = 1;
+}
+
+message ModifyStationDetailResp {
+	Result 	result = 1;
+}
+
+message ActiveStationReq {
+	int64 	delivery_station_id = 1;
+	string 	delivery_type_code = 2;
+}
+
+message ActiveStationResp {
+	Result 	result = 1;
+}
+
+message DeactiveStationReq {
+	int64 	delivery_station_id = 1;
+	string 	delivery_type_code = 2;
+}
+
+message DeactiveStationResp {
+	Result result = 1;
+}
+
+message ListPickupPeriodReq{
+	int64 	delivery_station_id = 1;
+	int32 	offset = 2;
+	int32 	limit = 3;
+}
+
+message ListPickupPeriodResp{
+	Result 	result = 1;
+	int32	total = 2;
+	repeated PickupPeriod items = 3;
+}
+
+message AddPickupPeriodReq {
+	PickupPeriod pickup_period = 1;
+}
+
+message AddPickupPeriodResp {
+	Result result = 1;
+	PickupPeriod data = 2;	
+}
+
+message ModifyPickupPeriodReq {
+	PickupPeriod pickup_period = 1;
+}
+
+message ModifyPickupPeriodResp {
+	Result result = 1;
+}
+
+message ActivePickupPeriodReq {
+	int64 	pickup_period_id = 1;
+}
+
+message ActivePickupPeriodResp {
+	Result 	result = 1;
+}
+
+message DeactivePickupPeriodReq {
+	int64 	pickup_period_id = 1;
+}
+
+message DeactivePickupPeriodResp {
+	Result result = 1;
+}
+
+message ListStationHolidayReq{
+	int64 	delivery_station_id = 1;
+	int32 	offset = 2;
+	int32 	limit = 3;
+}
+
+message ListStationHolidayResp{
+	Result 	result = 1;
+	int32	total = 2;
+	repeated Holiday items = 3;
+}
+
+
+message SetStationHolidayReq {
+	int64 	delivery_station_id = 1;
+	//! 假期开始日期('yyyy/mm/dd'), 默认空时取今天
+	int64	start_date = 2;
+	//! 假期结束日期('yyyy/mm/dd'), 默认空时取今天 + 1
+	int64  	end_date = 3;
+}
+
+message SetStationHolidayResp {
+	Result 	result = 1;
+	Holiday holiday = 2;
+}
+
+message UnsetStationHolidayReq {
+	int64 	delivery_station_id = 1;
+	//! 假期开始日期('yyyy/mm/dd'), 默认空时取今天
+	int64	start_date = 2;
+	//! 假期结束日期('yyyy/mm/dd'), 默认空时取今天 + 1
+	int64  	end_date = 3;
+}
+
+message UnsetStationHolidayResp {
+	Result 	result = 1;
+}
+
+service DeliveryStationService {
+	////// 	站点类型 ////// 
+
+	//! 获取发件类型列表
+	rpc GetDeliveryTypeList(GetDeliveryTypeListReq) returns (GetDeliveryTypeListResp);
+
+	//! 获取站点类型列表
+	rpc GetStationTypeList(GetStationTypeListReq) returns (GetStationTypeListResp);
+
+	////// 	站点 	////// 
+
+	//! 获取发件站基础信息
+	rpc GetStation(GetStationReq) returns (GetStationResp);
+
+	//! 获取发件站基础信息
+	rpc GetStationByName(GetStationByNameReq) returns (GetStationByNameResp);
+
+	//! 获取发件站详细信息
+	rpc GetStationDetail(GetStationReq) returns (GetStationDetailResp);
+
+	//! 获取发件站信息列表 按发件类型获取
+	rpc GetStationListByDeliveryType(GetStationListByDeliveryTypeReq) returns (GetStationListByDeliveryTypeResp);
+
+	//! 获取发件站信息列表 按站点类型获取
+	rpc GetStationListByStationType(GetStationListByStationTypeReq) returns (GetStationListByStationTypeResp);
+
+	//! 获取发件站信息列表 按地理位置参数获取
+	rpc GetStationListByGeo(GetStationListByGeoReq) returns (GetStationListByGeoResp);
+
+	//! 判断站点是否休假
+	rpc IsStationOnHoliday(IsStationOnHolidayReq) returns (IsStationOnHolidayResp);
+
+	//! 获取发件站休假列表
+	rpc GetStationHolidays(GetStationHolidaysReq) returns (GetStationHolidaysResp);
+
+	////// 	取货时间段 ////// 
+
+	//! 获取取货时段信息
+	rpc GetPickupPeriod(GetPickupPeriodReq) returns (GetPickupPeriodResp);	
+
+	//! 获取取货时段信息 按名称
+	rpc GetPickupPeriodByName(GetPickupPeriodByNameReq) returns (GetPickupPeriodByNameResp);
+
+	//! 获取发件站取货时间段日历 按连续几天
+	rpc GetPickupPeriodCalendar(GetPickupPeriodCalendarReq) returns (GetPickupPeriodCalendarResp);
+
+	//! 获取发件站取货时段列表 
+	rpc GetStationPickupPeriodList(GetStationPickupPeriodListReq) returns (GetStationPickupPeriodListResp);
+
+	//! 获取发件站取货时段列表 按连续几天
+	rpc GetStationPickupPeriodListByDays(GetStationPickupPeriodListByDaysReq) returns (GetStationPickupPeriodListByDaysResp);
+
+	//! 获取发件站取货时段列表 按指定日期
+	rpc GetStationPickupPeriodListByDate(GetStationPickupPeriodListByDateReq) returns (GetStationPickupPeriodListByDateResp);
+
+	//! 设置取货时间段上提取包裹日程 以package
+	rpc SetPickupArrangement(SetPickupArrangementReq) returns (SetPickupArrangementResp);
+
+	////// 	ERP 管理接口 ////// 
+
+	//! 仅供ERP查询: 发件站列表, 同业务列表接口：会给出已禁用的条目
+	rpc ListStation(ListStationReq) returns (ListStationResp);
+
+	//! 添加新的发件站
+	rpc AddStation(AddStationReq) returns (AddStationResp);
+
+	//! 修改的发件站信息
+	rpc ModifyStation(ModifyStationReq) returns (ModifyStationResp);
+
+	//! 添加新的发件站
+	rpc AddStationDetail(AddStationDetailReq) returns (AddStationDetailResp);
+
+	//! 修改的发件站信息
+	rpc ModifyStationDetail(ModifyStationDetailReq) returns (ModifyStationDetailResp);
+
+	//! 启用的发件站投入使用
+	rpc ActiveStation(ActiveStationReq) returns (ActiveStationResp);
+
+	//! 停用的发件站投入使用
+	rpc DeactiveStation(DeactiveStationReq) returns (DeactiveStationResp);
+
+	//! 仅供ERP查询: 发件站休假列表, 同业务列表接口：会给出已禁用的条目
+	rpc ListStationHoliday(ListStationHolidayReq) returns (ListStationHolidayResp);
+
+	//! 设置发件站休假日期
+	rpc SetStationHoliday(SetStationHolidayReq) returns (SetStationHolidayResp);
+
+	//! 取消时间区间内发件站所有休假
+	rpc UnsetStationHoliday(UnsetStationHolidayReq) returns (UnsetStationHolidayResp);
+
+	//! 仅供ERP查询: 发件站有效取货时间列表, 同业务列表接口：会给出已禁用的条目
+	rpc ListPickupPeriod(ListPickupPeriodReq) returns (ListPickupPeriodResp);
+
+	//! 新增发件站有效取货时间
+	rpc AddPickupPeriod(AddPickupPeriodReq) returns (AddPickupPeriodResp);
+
+	//! 修改发件站有效取货时间
+	rpc ModifyPickupPeriod(ModifyPickupPeriodReq) returns (ModifyPickupPeriodResp);
+
+	//! 停用发件站有效取货时间
+	rpc ActivePickupPeriod(ActivePickupPeriodReq) returns (ActivePickupPeriodResp);
+
+	//! 启用发件站有效取货时间
+	rpc DeactivePickupPeriod(DeactivePickupPeriodReq) returns (DeactivePickupPeriodResp);
+
+}

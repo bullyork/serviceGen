@@ -1,0 +1,69 @@
+syntax = "proto3";
+package spike;
+import "spike/elastic_entity.proto";
+
+service Elastic {
+	rpc Search(ElasticSearch) returns (ElasticSearchResp);
+	rpc Get(ElasticGet) returns (ElasticGetResp);
+	rpc SetLang(ElasticSetLang) returns (ElasticSetLangResp);
+	rpc GetLang(ElasticGetLang) returns (ElasticGetLangResp);
+}
+
+// -----------------------------------------------------------------------------
+
+message ElasticSearch {
+	string query = 1;
+	int32 from = 2;
+	int32 size = 3;
+	repeated string sort = 4;
+	bool nocache = 6;
+	string cacheTime = 5;
+}
+
+message ElasticSearchResp {
+	int64 total = 1;
+	repeated string entity = 2;
+	repeated ElasticLang lang = 3;
+}
+
+// -----------------------------------------------------------------------------
+
+message ElasticGet {
+	int64 gpid = 1;
+	string refId = 2;
+	repeated string langs = 3;
+}
+
+message ElasticGetResp {
+	string jsonret = 1;
+	ElasticLang lang = 2;
+}
+
+// -----------------------------------------------------------------------------
+
+message ElasticSetLang {
+	string refId = 1;
+	repeated ElasticSetLangItem langs = 2;
+}
+
+message ElasticSetLangItem {
+	string lang = 1;
+	string field = 2;
+	string msg = 3;
+}
+
+message ElasticSetLangResp {
+	
+}
+
+// -----------------------------------------------------------------------------
+
+message ElasticGetLang {
+	int64 gpid = 1;
+	string refId = 2;
+}
+
+message ElasticGetLangResp {
+	map<string, string> title = 1;
+}
+

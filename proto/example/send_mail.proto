@@ -1,0 +1,14 @@
+syntax = "proto3";
+package example;
+
+message SendMailPing {
+	string Msg = 1;
+}
+
+message SendMailPingResp {
+	string Msg = 1;
+}
+
+service SendMail {
+	rpc Ping(SendMailPing) returns (SendMailPingResp);
+}

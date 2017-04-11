@@ -1,0 +1,97 @@
+syntax = "proto3";
+package spike;
+
+import "common/time.proto";
+
+message ProductEntity {
+	int64 gpid = 1;
+	string refId = 2;
+	bool isPrime = 3;
+	int32 primeShipmentType = 22;
+	bool isEzbuy = 4;
+	int32 ezbuyShipmentType = 23;
+	string productName = 5;
+	string altProductName = 18;
+
+	map<string, string> titleLang = 6;
+	double price = 7;
+	double originPrice = 8;
+	string productImage = 9;
+	repeated int64 ezcid = 10;
+	string vendorName = 11;
+	string originCode = 12;
+
+	// 什么作用 ??
+	string catalogCode = 13;
+	int64 buyCount = 14;
+
+	string stateCode = 15; // 来源地
+
+	double unitPrice = 16; // ??
+	double oriUnitPrice = 24;
+	string domesticShippingEta = 17;
+	// 18
+	double weight = 19;
+	double discountValue = 20;
+	double rebateDiscount = 21;
+	map<string, string> attributes = 25;
+	
+
+	// 活动相关
+	ProductEntityFlashSales flashSales = 100;
+	bool isCashOff = 101;
+	ProductEntityCashOff cashoff = 102;
+
+
+	// 卖家
+	string ezSellerId = 200;
+
+	// 除卖家外其他来源的附属数据
+	int64 cid = 1001;
+	string productUrl = 1002; 
+	
+	// 即将被淘汰
+	string availableShipmentTypeIds = 2001;
+	bool isBlock = 2002;
+	bool isBlockDetail = 2003;
+	repeated int32 productCategoryIds = 2004;
+	bool isOnSale = 2005;
+
+	// 未知字段
+	string productKey = 5001;
+	int64 topProductId = 5002;
+	int32 sellerProductId = 5003;
+	int32 isPartnerShopProduct = 5004;
+	double estWeight = 5005;
+	double estVolumeWeight = 5006;
+	string source = 5007;
+	string productDescription = 5008;
+	string productImages = 5009;
+	int32 sellerId = 5010;
+	map<string, double> internalShippingFees = 5011;
+	string internalProductUrl = 5012;
+	repeated int32 ezProperties = 5013;
+	repeated string ezPropertyValues = 5014;
+	repeated string originAttributes = 5015;
+	
+	// common.Time flagDate
+	// CreateBy
+	// CreateDate
+	// UpdateBy
+	// UpdateDate
+}
+
+message ProductEntityCashOff {
+	string key = 1;
+	common.Time expire = 2;
+	common.Time start = 3;
+	repeated string country = 4;
+}
+
+message ProductEntityFlashSales {
+	double price = 1;
+	common.Time start = 2;
+	common.Time end = 3;
+	int32 limitation = 4;
+	int32 stock = 5;
+}

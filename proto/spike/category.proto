@@ -1,0 +1,11 @@
+syntax = "proto3";
+package spike;
+
+message CategoryPingResp {
+	string Msg = 1;
+}
+
+
+service Category {
+	rpc PingCategory(CategoryPingResp) returns (CategoryPingResp);
+}

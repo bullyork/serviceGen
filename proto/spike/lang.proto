@@ -1,0 +1,30 @@
+syntax = "proto3";
+package spike;
+
+enum LangType {
+	LangTypeBing = 0;
+	LangTypeGoogle = 1;
+}
+
+message LangResult {
+	string Msg = 1;
+}
+
+message LangTranslateResp {
+	repeated LangResult result = 1;
+}
+
+message LangItem {
+	LangType type = 1;
+	string source = 2;
+	string dest = 3;
+	string msg = 4;
+}
+
+message LangTranslate {
+	repeated LangItem reqs = 1;
+}
+
+service Lang {
+	rpc Translate(LangTranslate) returns (LangTranslateResp);
+}

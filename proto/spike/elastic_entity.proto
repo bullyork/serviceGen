@@ -1,0 +1,9 @@
+syntax = "proto3";
+package spike;
+
+message ElasticLang {
+	map<string,string> title = 1;
+}
+
+message ElasticEntity {
+}
