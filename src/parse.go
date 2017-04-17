@@ -21,6 +21,36 @@ type tokensArray struct {
 	data []string
 }
 
+func onfieldoptions(tokens *tokensArray) map[string]string {
+	var opts map[string]string
+	for len(tokens.data) > 0 {
+		switch tokens.data[0] {
+		case "[", ",":
+			shift(tokens)
+			name := shift(tokens)
+			if name == "(" {
+				name = shift(tokens)
+				shift(tokens)
+			}
+			if tokens.data[0] != "=" {
+				fmt.Println("Unexpected token in field options: " + tokens.data[0])
+			}
+			shift(tokens)
+			if tokens.data[0] == "]" {
+				fmt.Println("Unexpected ] in field option")
+			}
+			opts["name"] = shift(tokens)
+		case "]":
+			shift(tokens)
+			return opts
+		default:
+			fmt.Println("Unexpected token in field options: " + tokens.data[0])
+		}
+	}
+	fmt.Println("No closing tag for field options")
+	return opts
+}
+
 func onpackagename(tokens *tokensArray) string {
 	shift(tokens)
 	name := tokens.data[0]
@@ -71,13 +101,13 @@ type field struct {
 	mapArea  map[string]string
 	required bool
 	repeated bool
-	options  map[string]interface{}
+	options  map[string]string
 }
 
 type messageBody struct {
 	enums      []int
 	messages   []string
-	fields     []string
+	fields     []field
 	extends    []string
 	extensions extensions
 }
@@ -144,13 +174,33 @@ func onfield(tokens *tokensArray) field {
 	return field
 }
 
+func onenum(tokens *tokensArray) map[string]interface{} {
+	shift(tokens)
+	var e map[string]interface{}
+	e["name"] = shift(tokens)
+	if tokens.data[0] != "{" {
+		fmt.Println("Expected { but found " + tokens.data[0])
+	}
+	shift(tokens)
+	for len(tokens.data) > 0 {
+		if tokens.data[0] == "}" {
+			shift(tokens)
+			if tokens.data[0] == ";" {
+				shift(tokens)
+			}
+			return e
+		}
+	}
+}
+
 func onmessagebody(tokens *tokensArray) messageBody {
 	var body messageBody
 	for len(tokens.data) > 0 {
 		switch tokens.data[0] {
 		case "map", "repeated", "optional", "required":
 			append(body.fields, onfield(tokens))
-			break
+		case "enum":
+			body.enums.push(onenum(tokens))
 		}
 	}
 }
