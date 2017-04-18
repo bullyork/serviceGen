@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"reflect"
+	"regexp"
 	"strconv"
 
 	"github.com/bullyork/serviceGen/src/tool"
@@ -174,6 +176,128 @@ func onfield(tokens *tokensArray) field {
 	return field
 }
 
+func parse(value string) interface{} {
+	if value == "true" {
+		return true
+	}
+	if value == "false" {
+		return false
+	}
+	return value
+}
+
+func toSlice(arr interface{}) []interface{} {
+	v := reflect.ValueOf(arr)
+	if v.Kind() != reflect.Slice {
+		panic("toslice arr not slice")
+	}
+	l := v.Len()
+	ret := make([]interface{}, l)
+	for i := 0; i < l; i++ {
+		ret[i] = v.Index(i).Interface()
+	}
+	return ret
+}
+
+func onoptionMap(tokens *tokensArray) interface{} {
+	var result map[string]interface{}
+	for len(tokens.data) > 0 {
+		if tokens.data[0] == "}" {
+			shift(tokens)
+			return result
+		}
+		hasBracket := tokens.data[0] == "("
+		if hasBracket {
+			shift(tokens)
+		}
+		key := shift(tokens)
+		if hasBracket {
+			if tokens.data[0] != ")" {
+				fmt.Println("Expected ) but found " + tokens.data[0])
+			}
+		}
+		var value interface{}
+		switch tokens.data[0] {
+		case ":":
+			if result[key] != nil {
+				fmt.Println("Duplicate option map key " + key)
+			}
+			shift(tokens)
+			value = parse(shift(tokens))
+			if value.(string) == "{" {
+				value = onoptionMap(tokens)
+			}
+			result[key] = value
+		case "{":
+			shift(tokens)
+			value = onoptionMap(tokens)
+			if result[key] == nil {
+				var s = make([]interface{}, 0)
+				result[key] = s
+			}
+			v := reflect.ValueOf(result[key])
+			if v.Kind() != reflect.Slice {
+				fmt.Println("Duplicate option map key " + key)
+			}
+			l := v.Len()
+			sliceValue := make([]interface{}, l)
+			for i := 0; i < l; i++ {
+				sliceValue[i] = v.Index(i).Interface()
+			}
+			result[key] = append(sliceValue, value)
+		default:
+			fmt.Println("Unexpected token in option map: " + tokens.data[0])
+		}
+	}
+	fmt.Println("No closing tag for option map")
+	return result
+}
+
+func onoption(tokens *tokensArray) map[string]interface{} {
+	var name string
+	var value interface{}
+	var result map[string]interface{}
+	for len(tokens.data) > 0 {
+		if tokens.data[0] == ";" {
+			shift(tokens)
+			result["name"] = name
+			result["value"] = value
+			return result
+		}
+		switch tokens.data[0] {
+		case "option":
+			shift(tokens)
+			hasBracket := tokens.data[0] == "("
+			if hasBracket {
+				shift(tokens)
+			}
+			name = shift(tokens)
+			if hasBracket {
+				if tokens.data[0] != ")" {
+					fmt.Println("Expected ) but found " + tokens.data[0])
+				}
+				shift(tokens)
+			}
+		case "=":
+			shift(tokens)
+			if name == "" {
+				fmt.Println("Expected key for option with value: " + tokens.data[0])
+			}
+			value = parse(shift(tokens))
+			re, _ := regexp.Compile(`^(SPEED|CODE_SIZE|LITE_RUNTIME)$`)
+			flag := re.MatchString(value.(string))
+			if name == "optimize_for" && !flag {
+				fmt.Println("Unexpected value for option optimize_for: " + value.(string))
+			} else if value.(string) == "{" {
+				value = onoptionMap(tokens)
+			}
+		default:
+			fmt.Println("Unexpected token in option: " + tokens.data[0])
+		}
+	}
+	return result
+}
+
 func onenum(tokens *tokensArray) map[string]interface{} {
 	shift(tokens)
 	var e map[string]interface{}
@@ -189,6 +313,9 @@ func onenum(tokens *tokensArray) map[string]interface{} {
 				shift(tokens)
 			}
 			return e
+		}
+		if tokens.data[0] == "option" {
+			options := onoption(tokens)
 		}
 	}
 }
