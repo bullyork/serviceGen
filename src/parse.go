@@ -11,6 +11,7 @@ import (
 )
 
 var maxRange = 0x1FFFFFFF
+var packableTypes = []string{"int32", "int64", "uint32", "uint64", "sint32", "sint64", "bool", "fixed64", "sfixed64", "double", "fixed32", "sfixed32", "float"}
 
 type schema struct {
 	syntax   int
@@ -18,8 +19,9 @@ type schema struct {
 	enums    []interface{}
 	messages []message
 	options  map[string]interface{}
-	extends  []interface{}
+	extends  []extand
 	pack     string
+	services []interface{}
 }
 
 type tokensArray struct {
@@ -390,10 +392,15 @@ func onextensions(tokens *tokensArray) extensions {
 	return result
 }
 
-func onextend(tokens *tokensArray) map[string]interface{} {
-	var out map[string]interface{}
-	out["name"] = tokens.data[1]
-	out["message"] = onmessage(tokens)
+type extand struct {
+	name    string
+	message message
+}
+
+func onextend(tokens *tokensArray) extand {
+	var out extand
+	out.name = tokens.data[1]
+	out.message = onmessage(tokens)
 	return out
 }
 
@@ -485,6 +492,117 @@ func unshift(tokens *tokensArray, str string) string {
 	return str
 }
 
+func onimport(tokens *tokensArray) string {
+	shift(tokens)
+	str := shift(tokens)
+	re, _ := regexp.Compile(`^"+|"+$`)
+	file := re.ReplaceAllString(str, "")
+	if tokens.data[0] != ";" {
+		panic("Unexpected token: " + tokens.data[0] + `. Expected ";"`)
+	}
+	shift(tokens)
+	return file
+}
+
+type rpcType struct {
+	name            string
+	inputType       string
+	outputType      string
+	clientStreaming bool
+	serverStreaming bool
+	options         map[string]interface{}
+}
+
+func onrpc(tokens *tokensArray) rpcType {
+	shift(tokens)
+	var rpc rpcType
+	if tokens.data[0] != "(" {
+		panic("Expected ( but found " + tokens.data[0])
+	}
+	shift(tokens)
+	if tokens.data[0] == "stream" {
+		shift(tokens)
+		rpc.clientStreaming = true
+	}
+	rpc.inputType = shift(tokens)
+
+	if tokens.data[0] != "(" {
+		panic("Expected ) but found " + tokens.data[0])
+	}
+	shift(tokens)
+	if tokens.data[0] != "returns" {
+		panic("Expected returns but found " + tokens.data[0])
+	}
+	shift(tokens)
+	if tokens.data[0] != "stream" {
+		shift(tokens)
+		rpc.serverStreaming = true
+	}
+	rpc.outputType = shift(tokens)
+
+	if tokens.data[0] != ")" {
+		panic("Expected ) but found " + tokens.data[0])
+	}
+	shift(tokens)
+
+	for len(tokens.data) > 0 {
+		if tokens.data[0] == "}" {
+			shift(tokens)
+			if tokens.data[0] == ";" {
+				shift(tokens)
+			}
+			return rpc
+		}
+		if tokens.data[0] == "option" {
+			opt := onoption(tokens)
+			if rpc.options[opt.name] != nil {
+				panic("Duplicate option " + opt.name)
+			}
+			rpc.options[opt.name] = opt.value
+		} else {
+			panic("Unexpected token in rpc options: " + tokens.data[0])
+		}
+	}
+	panic("No closing tag for rpc")
+}
+
+type serviceType struct {
+	name    string
+	methods []interface{}
+	options map[string]interface{}
+}
+
+func onservice(tokens *tokensArray) serviceType {
+	shift(tokens)
+	var service serviceType
+	if tokens.data[0] != "{" {
+		panic("Expected { but found " + tokens.data[0])
+	}
+	shift(tokens)
+	for len(tokens.data) > 0 {
+		if tokens.data[0] != "}" {
+			shift(tokens)
+			if tokens.data[0] == ";" {
+				shift(tokens)
+			}
+			return service
+		}
+		switch tokens.data[0] {
+		case "option":
+			opt := onoption(tokens)
+			if service.options[opt.name] != nil {
+				panic("Duplicate option " + opt.name)
+			}
+			service.options[opt.name] = opt.value
+		case "rpc":
+			service.methods = append(service.methods, onrpc(tokens))
+		default:
+			panic("Unexpected token in service: " + tokens.data[0])
+		}
+	}
+	panic("No closing tag for service")
+}
+
 func main() {
 	var tokens tokensArray
 	tokens.data = tool.Token("../proto/express/common.proto")
@@ -508,7 +626,33 @@ func main() {
 			}
 			sch.options[opt.name] = opt.value
 		case "import":
-			sch.imports = append(sch.imports, onimport(tokens))
+			sch.imports = append(sch.imports, onimport(&tokens))
+		case "extend":
+			sch.extends = append(sch.extends, onextend(&tokens))
+		case "service":
+			sch.services = append(sch.services, onservice(&tokens))
+		default:
+			panic("Unexpected token: " + tokens.data[0])
+		}
+		firstline = false
+	}
+	for _, ext := range sch.extends {
+		for _, msg := range sch.messages {
+			if msg.name == ext.name {
+				for _, field := range ext.message.fields {
+					if (msg.extensions.from == 0 && msg.extensions.to == 0) || field.tag < msg.extensions.from || field.tag > msg.extensions.to {
+						panic(msg.name + " does not declare " + strconv.Itoa(field.tag) + "as an extension number")
+					}
+					msg.fields = append(msg.fields, field)
+				}
+			}
+		}
+	}
+	for _, msg := range sch.messages {
+		for _, field := range msg.fields {
+			if field.options == nil && field.options["packed"] == "true" {
+				tool.IndexOf(packableTypes, field.typeArea)
+			}
 		}
 	}
 }

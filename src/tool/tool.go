@@ -9,6 +9,16 @@ import (
 
 var inside = false
 
+// IndexOf 方法
+func IndexOf(vs []string, ele string) int {
+	for p, v := range vs {
+		if v == ele {
+			return p
+		}
+	}
+	return -1
+}
+
 // Map 方法
 func Map(vs []string, f func(string) string) []string {
 	vsm := make([]string, len(vs))
