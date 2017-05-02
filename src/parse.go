@@ -638,7 +638,7 @@ func onservice(tokens *tokensArray) serviceType {
 // ParseProto 方法 用于转换protobuf
 func ParseProto(path string) Schema {
 	var tokens tokensArray
-	tokens.data = tool.Token("../proto/express/delivery_station.proto")
+	tokens.data = tool.Token(path)
 
 	var sch Schema
 	firstline := true
