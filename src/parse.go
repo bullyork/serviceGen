@@ -1,10 +1,9 @@
-package main
+package parseProto
 
 import (
 	"reflect"
 	"regexp"
 	"strconv"
-
 	"strings"
 
 	"github.com/bullyork/serviceGen/src/tool"
@@ -13,7 +12,8 @@ import (
 var maxRange = 0x1FFFFFFF
 var packableTypes = []string{"int32", "int64", "uint32", "uint64", "sint32", "sint64", "bool", "fixed64", "sfixed64", "double", "fixed32", "sfixed32", "float"}
 
-type schema struct {
+// Schema 结构 应该可以被导出
+type Schema struct {
 	syntax   int
 	imports  []interface{}
 	enums    []interface{}
@@ -55,7 +55,6 @@ func onfieldoptions(tokens *tokensArray) map[string]string {
 		}
 	}
 	panic("No closing tag for field options")
-	return opts
 }
 
 func onpackagename(tokens *tokensArray) string {
@@ -516,6 +515,7 @@ type rpcType struct {
 func onrpc(tokens *tokensArray) rpcType {
 	shift(tokens)
 	var rpc rpcType
+	rpc.name = shift(tokens)
 	if tokens.data[0] != "(" {
 		panic("Expected ( but found " + tokens.data[0])
 	}
@@ -526,7 +526,7 @@ func onrpc(tokens *tokensArray) rpcType {
 	}
 	rpc.inputType = shift(tokens)
 
-	if tokens.data[0] != "(" {
+	if tokens.data[0] != ")" {
 		panic("Expected ) but found " + tokens.data[0])
 	}
 	shift(tokens)
@@ -534,6 +534,9 @@ func onrpc(tokens *tokensArray) rpcType {
 		panic("Expected returns but found " + tokens.data[0])
 	}
 	shift(tokens)
+	if tokens.data[0] != "(" {
+		panic("Expected ( but found " + tokens.data[0])
+	}
 	if tokens.data[0] != "stream" {
 		shift(tokens)
 		rpc.serverStreaming = true
@@ -542,6 +545,16 @@ func onrpc(tokens *tokensArray) rpcType {
 
 	if tokens.data[0] != ")" {
 		panic("Expected ) but found " + tokens.data[0])
+	}
+	shift(tokens)
+
+	if tokens.data[0] == ";" {
+		shift(tokens)
+		return rpc
+	}
+
+	if tokens.data[0] != "{" {
+		panic("Expected { but found " + tokens.data[0])
 	}
 	shift(tokens)
 
@@ -572,17 +585,36 @@ type serviceType struct {
 	options map[string]interface{}
 }
 
+func enumNameIsFieldType(enums []interface{}, field field) bool {
+	for _, v := range enums {
+		if v.(string) == field.typeArea {
+			return true
+		}
+	}
+	return false
+}
+
+func enumNameIsNestedEnumName(msg message, nestedEnumName string) bool {
+	for _, v := range msg.enums {
+		if v.(string) == nestedEnumName {
+			return true
+		}
+	}
+	return false
+}
+
 func onservice(tokens *tokensArray) serviceType {
 	shift(tokens)
 	var service serviceType
+	service.name = shift(tokens)
 	if tokens.data[0] != "{" {
 		panic("Expected { but found " + tokens.data[0])
 	}
 	shift(tokens)
 	for len(tokens.data) > 0 {
-		if tokens.data[0] != "}" {
+		if tokens.data[0] == "}" {
 			shift(tokens)
-			if tokens.data[0] == ";" {
+			if len(tokens.data) > 0 && tokens.data[0] == ";" {
 				shift(tokens)
 			}
 			return service
@@ -603,17 +635,21 @@ func onservice(tokens *tokensArray) serviceType {
 	panic("No closing tag for service")
 }
 
-func main() {
+// ParseProto 方法 用于转换protobuf
+func ParseProto(path string) Schema {
 	var tokens tokensArray
-	tokens.data = tool.Token("../proto/express/common.proto")
+	tokens.data = tool.Token("../proto/express/delivery_station.proto")
 
-	var sch schema
+	var sch Schema
 	firstline := true
 	for len(tokens.data) > 0 {
 		switch tokens.data[0] {
 		case "package":
 			sch.pack = onpackagename(&tokens)
 		case "syntax":
+			if !firstline {
+				panic("Protobuf syntax version should be first thing in file")
+			}
 			sch.syntax = onsyntaxversion(&tokens)
 		case "message":
 			sch.messages = append(sch.messages, onmessage(&tokens))
@@ -651,8 +687,38 @@ func main() {
 	for _, msg := range sch.messages {
 		for _, field := range msg.fields {
 			if field.options == nil && field.options["packed"] == "true" {
-				tool.IndexOf(packableTypes, field.typeArea)
+				if tool.IndexOf(packableTypes, field.typeArea) == -1 {
+					if strings.Index(field.typeArea, ".") == -1 {
+						isFieldType := enumNameIsFieldType(msg.enums, field)
+						if len(msg.enums) != 0 && isFieldType {
+							return sch
+						}
+					} else {
+						fieldSplit := strings.Split(field.typeArea, ".")
+						if len(fieldSplit) > 2 {
+							panic("what is this?")
+						}
+						messageName := fieldSplit[0]
+						nestedEnumName := fieldSplit[1]
+						var message message
+						for _, mssg := range sch.messages {
+							if mssg.name == messageName {
+								message = msg
+								break
+							}
+						}
+						isNestedEnumName := enumNameIsNestedEnumName(message, nestedEnumName)
+						if len(message.enums) > 0 && isNestedEnumName {
+							return sch
+						}
+					}
+					panic("Fields of type " + field.typeArea + `cannot be declared [packed=true]. ' +
+            'Only repeated fields of primitive numeric types (types which use ` +
+						`the varint, 32-bit, or 64-bit wire types) can be declared "packed". ` +
+						`See https://developers.google.com/protocol-buffers/docs/encoding#optional`)
+				}
 			}
 		}
 	}
+	return sch
 }

@@ -1,5 +1,3 @@
-"qu
-ote"
 syntax = "proto3";
 package express;
 
