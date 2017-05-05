@@ -1,12 +1,3 @@
-Hacker: true
-name: steve
-hobbies:
-- skateboarding
-- snowboarding
-- go
-clothing:
-  jacket: leather
-  trousers: denim
-age: 35
-eyes : brown
-beard: true
+# 要引用的protobuf地址
+protobufPath: './proto/express/delivery_station.proto'
+

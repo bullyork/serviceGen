@@ -19,6 +19,7 @@ import (
 	"log"
 	"path/filepath"
 
+	"github.com/bullyork/serviceGen/genCode"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -43,7 +44,7 @@ var genCmd = &cobra.Command{
 		if err2 != nil {             // Handle errors reading the config file
 			panic(fmt.Errorf("Fatal error config file: %s \n", err2))
 		}
-		fmt.Println(viper.Get("name"))
+		genCode.GenCode()
 	},
 }
 

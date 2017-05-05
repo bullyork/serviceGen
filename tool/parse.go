@@ -1,12 +1,10 @@
-package parseProto
+package tool
 
 import (
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/bullyork/serviceGen/src/tool"
 )
 
 var maxRange = 0x1FFFFFFF
@@ -14,14 +12,14 @@ var packableTypes = []string{"int32", "int64", "uint32", "uint64", "sint32", "si
 
 // Schema 结构 应该可以被导出
 type Schema struct {
-	syntax   int
-	imports  []interface{}
-	enums    []interface{}
-	messages []message
-	options  map[string]interface{}
-	extends  []extand
-	pack     string
-	services []interface{}
+	Syntax   int
+	Imports  []interface{}
+	Enums    []interface{}
+	Messages []message
+	Options  map[string]interface{}
+	Extends  []extand
+	Pack     string
+	Services []interface{}
 }
 
 type tokensArray struct {
@@ -638,42 +636,42 @@ func onservice(tokens *tokensArray) serviceType {
 // ParseProto 方法 用于转换protobuf
 func ParseProto(path string) Schema {
 	var tokens tokensArray
-	tokens.data = tool.Token(path)
+	tokens.data = Token(path)
 
 	var sch Schema
 	firstline := true
 	for len(tokens.data) > 0 {
 		switch tokens.data[0] {
 		case "package":
-			sch.pack = onpackagename(&tokens)
+			sch.Pack = onpackagename(&tokens)
 		case "syntax":
 			if !firstline {
 				panic("Protobuf syntax version should be first thing in file")
 			}
-			sch.syntax = onsyntaxversion(&tokens)
+			sch.Syntax = onsyntaxversion(&tokens)
 		case "message":
-			sch.messages = append(sch.messages, onmessage(&tokens))
+			sch.Messages = append(sch.Messages, onmessage(&tokens))
 		case "enum":
-			sch.enums = append(sch.enums, onenum(&tokens))
+			sch.Enums = append(sch.Enums, onenum(&tokens))
 		case "option":
 			opt := onoption(&tokens)
-			if sch.options[opt.name] != nil {
+			if sch.Options[opt.name] != nil {
 				panic("Duplicate option " + opt.name)
 			}
-			sch.options[opt.name] = opt.value
+			sch.Options[opt.name] = opt.value
 		case "import":
-			sch.imports = append(sch.imports, onimport(&tokens))
+			sch.Imports = append(sch.Imports, onimport(&tokens))
 		case "extend":
-			sch.extends = append(sch.extends, onextend(&tokens))
+			sch.Extends = append(sch.Extends, onextend(&tokens))
 		case "service":
-			sch.services = append(sch.services, onservice(&tokens))
+			sch.Services = append(sch.Services, onservice(&tokens))
 		default:
 			panic("Unexpected token: " + tokens.data[0])
 		}
 		firstline = false
 	}
-	for _, ext := range sch.extends {
-		for _, msg := range sch.messages {
+	for _, ext := range sch.Extends {
+		for _, msg := range sch.Messages {
 			if msg.name == ext.name {
 				for _, field := range ext.message.fields {
 					if (msg.extensions.from == 0 && msg.extensions.to == 0) || field.tag < msg.extensions.from || field.tag > msg.extensions.to {
@@ -684,10 +682,10 @@ func ParseProto(path string) Schema {
 			}
 		}
 	}
-	for _, msg := range sch.messages {
+	for _, msg := range sch.Messages {
 		for _, field := range msg.fields {
 			if field.options == nil && field.options["packed"] == "true" {
-				if tool.IndexOf(packableTypes, field.typeArea) == -1 {
+				if IndexOf(packableTypes, field.typeArea) == -1 {
 					if strings.Index(field.typeArea, ".") == -1 {
 						isFieldType := enumNameIsFieldType(msg.enums, field)
 						if len(msg.enums) != 0 && isFieldType {
@@ -701,7 +699,7 @@ func ParseProto(path string) Schema {
 						messageName := fieldSplit[0]
 						nestedEnumName := fieldSplit[1]
 						var message message
-						for _, mssg := range sch.messages {
+						for _, mssg := range sch.Messages {
 							if mssg.name == messageName {
 								message = msg
 								break
